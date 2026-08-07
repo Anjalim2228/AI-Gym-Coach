@@ -238,8 +238,8 @@ This project is developed for educational and learning purposes.
 
 **Anjali Mane**
 
-* GitHub: https://github.com/your-username
-* LinkedIn: https://linkedin.com/in/your-profile
+* GitHub: [https://github.com/your-username](https://github.com/Anjalim2228)
+* LinkedIn: [https://linkedin.com/in/your-profile](https://www.linkedin.com/in/anjali-mane-7161ab2bb/)
 
 ---
 
