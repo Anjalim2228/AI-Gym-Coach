@@ -3,12 +3,12 @@
 ========================================================= */
 
 .stApp {
-  background-color: #0A0D14;
+  background-color: #05050a;
   color: #fff;
 }
 
 [data-testid="stSidebar"] {
-  background-color: #111520;
+  background-color: #0d0d16;
 }
 
 /* =========================================================
@@ -37,10 +37,20 @@ button,
 .stButton button,
 .stDownloadButton button,
 .MuiBox-root button {
-  background-color: #181D2A !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: #0d0d16 !important;
+  border: 1px solid rgba(0, 255, 242, 0.35) !important;
   border-radius: 0 !important;
   font-family: 'AdobeClean', sans-serif !important;
+  color: #eafffe !important;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+button:hover,
+.stButton button:hover,
+.stDownloadButton button:hover,
+.MuiBox-root button:hover {
+  border-color: #00fff2 !important;
+  box-shadow: 0 0 12px rgba(0, 255, 242, 0.35) !important;
 }
 
 /* =========================================================
@@ -65,10 +75,16 @@ code,
 ========================================================= */
 
 [data-testid="stMetric"] {
-  background-color: #181D2A;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #0d0d16;
+  border: 1px solid rgba(0, 255, 242, 0.25);
   padding: 1rem 1.2rem;
   border-radius: 0;
+  box-shadow: 0 0 16px rgba(0, 255, 242, 0.08);
+}
+
+[data-testid="stMetricValue"] {
+  color: #00fff2 !important;
+  text-shadow: 0 0 10px rgba(0, 255, 242, 0.5);
 }
 
 [data-testid="stMetric"] div {
@@ -176,6 +192,6 @@ div[role="menuitem"] {
 .stForm {
   margin-top: 2rem !important;
   padding: 1.5rem 1rem !important;
-  background-color: #181D2A !important;
+  background-color: #0d0d16 !important;
   color: #fff;
 }
