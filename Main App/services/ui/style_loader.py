@@ -63,9 +63,23 @@ def inject_webrtc_styles():
                         .MuiButton-root,
                         .MuiButton-contained,
                         .MuiButton-text {{
-                            border-radius: 0 !important;
+                            border-radius: 8px !important;
                             font-family: 'AdobeClean', sans-serif !important;
-                            letter-spacing: 0.05em !important;
+                            font-size: 15px !important;
+                            padding: 10px 20px !important;
+                            background-color: #0d9488 !important;
+                            color: #ffffff !important;
+                        }}
+                        video {{
+                            width: 100% !important;
+                            max-width: 1100px !important;
+                            height: auto !important;
+                            border-radius: 12px !important;
+                            border: 1px solid rgba(20,184,166,0.3) !important;
+                            box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 30px rgba(20,184,166,0.15) !important;
+                        }}
+                        body, html {{
+                            background: #060b14 !important;
                         }}
                     `;
                     doc.head.appendChild(style);
