@@ -26,62 +26,90 @@ class VideoProcessorClass(VideoProcessorBase):
         self._exercise_type = "Squats"
         self._frame_timestamps_ms = 0
 
-        # ============================================================
+        # =========================================================
         # FIND PROJECT ROOT
-        # ============================================================
+        # =========================================================
 
-        # Current file:
-        # Main_App/services/vision/exercise_video_processor.py
-        #
-        # parents:
-        # 0 -> vision
-        # 1 -> services
-        # 2 -> Main_App
-        # 3 -> project root
+        current_file = os.path.abspath(__file__)
 
-        BASE_DIR = os.path.abspath(
+        # exercise_video_processor.py
+        #        ↓
+        # vision
+        #        ↓
+        # services
+        #        ↓
+        # Main_App
+        #        ↓
+        # ai-gym-coach (PROJECT ROOT)
+
+        project_root = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__),
-                "../../../"
+                os.path.dirname(current_file),
+                "..",
+                "..",
+                ".."
             )
         )
 
-        # ============================================================
-        # MEDIA PIPE MODEL PATH
-        # ============================================================
+        # =========================================================
+        # FIND MEDIAPIPE MODEL
+        # =========================================================
 
-        model_path = os.path.join(
-            BASE_DIR,
-            "ml_models",
-            "pose_landmarker_full.task"
-        )
+        possible_model_paths = [
+            # Main project root
+            os.path.join(
+                project_root,
+                "ml_models",
+                "pose_landmarker_full.task"
+            ),
 
-        # Debug information
-        print("========================================")
-        print("AI GYM COACH - MEDIAPIPE INITIALIZATION")
-        print("========================================")
-        print(f"Project root: {BASE_DIR}")
-        print(f"Model path: {model_path}")
-        print(f"Model exists: {os.path.exists(model_path)}")
-        print("========================================")
+            # If ml_models is inside Main_App
+            os.path.join(
+                project_root,
+                "Main_App",
+                "ml_models",
+                "pose_landmarker_full.task"
+            ),
 
-        # Check model
-        if not os.path.isfile(model_path):
+            # Current working directory
+            os.path.join(
+                os.getcwd(),
+                "ml_models",
+                "pose_landmarker_full.task"
+            ),
+
+            # Current working directory/Main_App
+            os.path.join(
+                os.getcwd(),
+                "Main_App",
+                "ml_models",
+                "pose_landmarker_full.task"
+            ),
+        ]
+
+        model_path = None
+
+        for path in possible_model_paths:
+            if os.path.isfile(path):
+                model_path = path
+                break
+
+        # =========================================================
+        # MODEL NOT FOUND ERROR
+        # =========================================================
+
+        if model_path is None:
             raise FileNotFoundError(
-                f"""
-Pose model not found!
-
-Expected model location:
-{model_path}
-
-Make sure this file exists in:
-ml_models/pose_landmarker_full.task
-"""
+                "MediaPipe pose model not found.\n\n"
+                "Expected file:\n"
+                "ml_models/pose_landmarker_full.task\n\n"
+                "Searched locations:\n"
+                + "\n".join(possible_model_paths)
             )
 
-        # ============================================================
+        # =========================================================
         # MEDIAPIPE POSE LANDMARKER
-        # ============================================================
+        # =========================================================
 
         base_options = python.BaseOptions(
             model_asset_path=model_path
@@ -96,26 +124,13 @@ ml_models/pose_landmarker_full.task
             output_segmentation_masks=False
         )
 
-        try:
-            self._landmarker = (
-                vision.PoseLandmarker.create_from_options(
-                    options
-                )
-            )
+        self._landmarker = vision.PoseLandmarker.create_from_options(
+            options
+        )
 
-            print("MediaPipe PoseLandmarker initialized successfully.")
-
-        except Exception as e:
-            print("MediaPipe initialization failed.")
-            print(f"Error: {e}")
-
-            raise RuntimeError(
-                f"Failed to initialize MediaPipe PoseLandmarker: {e}"
-            ) from e
-
-        # ============================================================
+        # =========================================================
         # EXERCISE DETECTORS
-        # ============================================================
+        # =========================================================
 
         self._detectors = {
             "Squats": SquatDetector(),
@@ -125,9 +140,9 @@ ml_models/pose_landmarker_full.task
             "Lunges": LungesDetector(),
         }
 
-    # ================================================================
+    # =============================================================
     # METRICS
-    # ================================================================
+    # =============================================================
 
     def set_latest_metrics(self, metrics):
         with self._lock:
@@ -140,9 +155,9 @@ ml_models/pose_landmarker_full.task
 
             return self._latest_metrics.copy()
 
-    # ================================================================
+    # =============================================================
     # EXERCISE
-    # ================================================================
+    # =============================================================
 
     def set_exercise(self, exercise_type):
         with self._lock:
@@ -152,9 +167,9 @@ ml_models/pose_landmarker_full.task
         with self._lock:
             return self._exercise_type
 
-    # ================================================================
+    # =============================================================
     # DRAW SKELETON
-    # ================================================================
+    # =============================================================
 
     def _draw_skeleton(self, img, landmarks):
 
@@ -170,6 +185,7 @@ ml_models/pose_landmarker_full.task
                 p1.visibility > 0.7
                 and p2.visibility > 0.7
             ):
+
                 cv2.line(
                     img,
                     (
@@ -200,9 +216,9 @@ ml_models/pose_landmarker_full.task
                     -1
                 )
 
-    # ================================================================
+    # =============================================================
     # NO POSE WARNING
-    # ================================================================
+    # =============================================================
 
     def _draw_no_pose_warnings(self, img):
 
@@ -228,58 +244,38 @@ ml_models/pose_landmarker_full.task
             cv2.LINE_AA
         )
 
-    # ================================================================
-    # OVERLAYS
-    # ================================================================
+    # =============================================================
+    # EXERCISE OVERLAYS
+    # =============================================================
 
     def _draw_overlays(self, img, metrics, ex_type):
 
         if ex_type == "Squats":
-            self._draw_squats_overlays(
-                img,
-                metrics
-            )
+            self._draw_squats_overlays(img, metrics)
 
         elif ex_type == "Push-ups":
-            self._draw_pushup_overlays(
-                img,
-                metrics
-            )
+            self._draw_pushup_overlays(img, metrics)
 
         elif ex_type == "Biceps Curls (Dumbbell)":
-            self._draw_curl_overlays(
-                img,
-                metrics
-            )
+            self._draw_curl_overlays(img, metrics)
 
         elif ex_type == "Shoulder Press":
-            self._draw_press_overlays(
-                img,
-                metrics
-            )
+            self._draw_press_overlays(img, metrics)
 
         elif ex_type == "Lunges":
-            self._draw_lunge_overlays(
-                img,
-                metrics
-            )
+            self._draw_lunge_overlays(img, metrics)
 
-    # ================================================================
+    # =============================================================
     # SQUAT OVERLAY
-    # ================================================================
+    # =============================================================
 
     def _draw_squats_overlays(self, img, metrics):
 
         h, _ = img.shape[:2]
 
-        depth_status = metrics.get(
-            "depth_status",
-            "N/A"
-        )
-
         cv2.putText(
             img,
-            f"DEPTH: {depth_status}",
+            f"DEPTH: {metrics.get('depth_status', 'N/A')}",
             (20, h - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -287,80 +283,19 @@ ml_models/pose_landmarker_full.task
             2
         )
 
-    # ================================================================
-    # PUSH-UP OVERLAY
-    # ================================================================
+    # =============================================================
+    # PUSHUP OVERLAY
+    # =============================================================
 
     def _draw_pushup_overlays(self, img, metrics):
 
         h, _ = img.shape[:2]
 
-        body_alignment = metrics.get(
-            "body_alignment",
-            "N/A"
-        )
-
-        hip_status = metrics.get(
-            "hip_status",
-            "N/A"
-        )
-
-        cv2.putText(
-            img,
-            f"BODY: {body_alignment} | HIP: {hip_status}",
-            (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
-        )
-
-    # ================================================================
-    # BICEPS CURL OVERLAY
-    # ================================================================
-
-    def _draw_curl_overlays(self, img, metrics):
-
-        h, _ = img.shape[:2]
-
-        swing_status = metrics.get(
-            "swing_status",
-            "N/A"
-        )
-
-        cv2.putText(
-            img,
-            f"SWING: {swing_status}",
-            (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
-        )
-
-    # ================================================================
-    # SHOULDER PRESS OVERLAY
-    # ================================================================
-
-    def _draw_press_overlays(self, img, metrics):
-
-        h, _ = img.shape[:2]
-
-        extension_status = metrics.get(
-            "extension_status",
-            "N/A"
-        )
-
-        back_arch_status = metrics.get(
-            "back_arch_status",
-            "N/A"
-        )
-
         cv2.putText(
             img,
             (
-                f"EXT: {extension_status} | "
-                f"BACK: {back_arch_status}"
+                f"BODY: {metrics.get('body_alignment', 'N/A')} "
+                f"| HIP: {metrics.get('hip_status', 'N/A')}"
             ),
             (20, h - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -369,22 +304,17 @@ ml_models/pose_landmarker_full.task
             2
         )
 
-    # ================================================================
-    # LUNGE OVERLAY
-    # ================================================================
+    # =============================================================
+    # BICEPS CURL OVERLAY
+    # =============================================================
 
-    def _draw_lunge_overlays(self, img, metrics):
+    def _draw_curl_overlays(self, img, metrics):
 
         h, _ = img.shape[:2]
 
-        balance_status = metrics.get(
-            "balance_status",
-            "N/A"
-        )
-
         cv2.putText(
             img,
-            f"BALANCE: {balance_status}",
+            f"SWING: {metrics.get('swing_status', 'N/A')}",
             (20, h - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -392,31 +322,65 @@ ml_models/pose_landmarker_full.task
             2
         )
 
-    # ================================================================
-    # RECEIVE VIDEO FRAME
-    # ================================================================
+    # =============================================================
+    # SHOULDER PRESS OVERLAY
+    # =============================================================
+
+    def _draw_press_overlays(self, img, metrics):
+
+        h, _ = img.shape[:2]
+
+        cv2.putText(
+            img,
+            (
+                f"EXT: {metrics.get('extension_status', 'N/A')} "
+                f"| BACK: {metrics.get('back_arch_status', 'N/A')}"
+            ),
+            (20, h - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+    # =============================================================
+    # LUNGE OVERLAY
+    # =============================================================
+
+    def _draw_lunge_overlays(self, img, metrics):
+
+        h, _ = img.shape[:2]
+
+        cv2.putText(
+            img,
+            f"BALANCE: {metrics.get('balance_status', 'N/A')}",
+            (20, h - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+    # =============================================================
+    # RECEIVE CAMERA FRAME
+    # =============================================================
 
     def recv(self, frame):
 
         # Convert WebRTC frame to OpenCV BGR
-        image = frame.to_ndarray(
-            format="bgr24"
-        )
+        image = frame.to_ndarray(format="bgr24")
 
         # Mirror camera
-        image = cv2.flip(
-            image,
-            1
-        )
+        image = cv2.flip(image, 1)
 
         image = np.asarray(
             image,
             dtype=np.uint8
         )
 
-        # ============================================================
+        # =========================================================
         # CONVERT BGR -> RGB FOR MEDIAPIPE
-        # ============================================================
+        # =========================================================
 
         rgb_image = cv2.cvtColor(
             image,
@@ -428,24 +392,24 @@ ml_models/pose_landmarker_full.task
             data=rgb_image
         )
 
-        # ============================================================
+        # =========================================================
         # TIMESTAMP
-        # ============================================================
+        # =========================================================
 
-        self._frame_timestamps_ms += 30
+        self._frame_timestamps_ms += 33
 
-        # ============================================================
-        # MEDIAPIPE DETECTION
-        # ============================================================
+        # =========================================================
+        # MEDIAPIPE POSE DETECTION
+        # =========================================================
 
         result = self._landmarker.detect_for_video(
             mp_image,
             self._frame_timestamps_ms
         )
 
-        # ============================================================
+        # =========================================================
         # POSE FOUND
-        # ============================================================
+        # =========================================================
 
         if result.pose_landmarks:
 
@@ -472,7 +436,6 @@ ml_models/pose_landmarker_full.task
                     landmarks
                 )
 
-                # Mark pose detected
                 metrics["pose_detected"] = True
 
                 # Draw exercise information
@@ -487,9 +450,9 @@ ml_models/pose_landmarker_full.task
                     metrics
                 )
 
-        # ============================================================
+        # =========================================================
         # NO POSE
-        # ============================================================
+        # =========================================================
 
         else:
 
@@ -511,9 +474,9 @@ ml_models/pose_landmarker_full.task
                         "pose_detected": False
                     }
 
-        # ============================================================
-        # RETURN FRAME
-        # ============================================================
+        # =========================================================
+        # RETURN VIDEO FRAME
+        # =========================================================
 
         return av.VideoFrame.from_ndarray(
             image,
