@@ -37,6 +37,12 @@ class VideoProcessorClass(VideoProcessorBase):
             "pose_landmarker_full.task"
         )
 
+        # Check if MediaPipe model exists
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(
+                f"Pose model not found at: {model_path}"
+            )
+
         # MediaPipe model configuration
         base_option = python.BaseOptions(
             model_asset_path=model_path
